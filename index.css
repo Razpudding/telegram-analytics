@@ -1,0 +1,36 @@
+.chart {
+  padding-top: 10%;
+}
+
+.lineChart{
+  width:100%;
+  height:500px;
+}
+
+.chart .barLabels{
+	fill: white;
+	font: 10px sans-serif;
+	text-anchor: middle;
+}
+
+.axis text {
+  font: 10px sans-serif;
+	color: black;
+  font-weight: bold;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+.axis .tick line {
+  display:none;
+}
+
+.line {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 1.5px;
+}
