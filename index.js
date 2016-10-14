@@ -1,13 +1,15 @@
 /*
 * Created by Laurens Aarnoudse
 * TODO
-* Move to new folder, set up budo
 * Create graph per month with activity per person (change months with interactive button by using filter)
-* Anonimise data by deleting message content
 * Restructure so that index sets up the canvas, calls different class per chart (like linechart)
+* Add example TSV file with fake telegram data so the repo works, change gitignore so this file is included
+* Make nicer filestructure with data and src
 */
 
-//(function(){ disabled iffe for now to access vars from console TODO: turn back on
+//(function(){ //disabled iffe for now to access vars from console .TODO: turn back on
+var sourceTSV ="Tel_20_08_2015.tsv";  //Change this line to point to your local telegram data file
+var headers = ["name","date","message"].join("\t"); //This line holds the headers that will be added to the data
 
 var margin = {
   top: 50,
@@ -40,23 +42,16 @@ lineChart.append("path")
 
 var globalData; //temporarily global to allow access from brower console
 
-d3.tsv("Tel_20_08_2015_2.tsv", function(error, data) {
-   var d3Groups = d3.nest()
-  .key(function(d) { return d.name; })
-  .entries(data);
-  //console.table(d3Groups);
+d3.text(sourceTSV, function(error, data) {
+  data = d3.tsv.parse(headers +"\n"+ data);
+  data = groupMessages(data);//Let's group the data by name of the poster
 
-
-  //Let's group the data by name of the poster
-  data = groupMessages(data);
-  //var list = ["dirk", "dirkleton"];
-  var options = d3.select("#lineChartDropDown").selectAll('option').data(d3.keys(data)); // Data join\
-  // Enter selection
+  //Fill the droptown with the names of the posters from the data
+  var options = d3.select("#lineChartDropDown").selectAll('option').data(d3.keys(data));
   options.enter().append("option").text(function(d,i) { return d; });
 
   buildLineChart(lineChart, data);
 
-  //console.log("loaded messages" + data.length);
   //console.table(data);
   x.domain(Object.keys(data));  //use Object.keys(myObject) to get an array of keys in the object
   y.domain([0, d3.max(d3.values(data), function(d) { return d.length; } ) ]); //use d3.values to get an array of values from the object
@@ -64,26 +59,25 @@ d3.tsv("Tel_20_08_2015_2.tsv", function(error, data) {
 
   var barWidth = width / x.domain().length;
 
-  //We're creating a group data join per datum. By tranlating the group to the right position,
+  //We're creating a group per datum. By tranlating the group to the right position,
   //Its children wont need their x values set individually.
   var bar = barChart.selectAll("g")
       .data(d3.values(data))
-      .enter().append("g")
+    .enter().append("g")
       .attr("transform", function(d, i) {
         return "translate(" + i * barWidth + ",0)";
       });
       
-    bar.append("rect")
-      //.attr("x", function(d,i) { return i * barWidth})
-      .attr("y", function(d) { return y(d.length) })
-      .attr("width", barWidth)
-      .attr("height", 0)
-      .attr("fill", function(d) { return colorScale(d.averageActivity)})  //Todo this should divide the #messages by the delta month between first and last message
-      .transition()
-        .delay(function(d,i) { return 150 * i})
-        .duration(300)
-        .ease("linear")
-        .attr("height", function(d) { return height - y(d.length)});
+  bar.append("rect")
+    .attr("y", function(d) { return y(d.length) })
+    .attr("width", barWidth)
+    .attr("height", 0)
+    .attr("fill", function(d) { return colorScale(d.averageActivity)})  //Todo this should divide the #messages by the delta month between first and last message
+    .transition()
+      .delay(function(d,i) { return 150 * i})
+      .duration(300)
+      .ease("linear")
+      .attr("height", function(d) { return height - y(d.length)});
 
     bar.selectAll("rect")
     .append("svg:title")    //svg title adds a title element, which makes use of the browers native tooltip function

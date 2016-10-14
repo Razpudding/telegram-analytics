@@ -1,4 +1,4 @@
-
 *.tsv
+!Tel_20_08_2015.tsv
 .DS_Store
 *.log
