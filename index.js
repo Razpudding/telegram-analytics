@@ -8,7 +8,7 @@
 */
 
 //(function(){ //disabled iffe for now to access vars from console .TODO: turn back on
-var sourceTSV ="Tel_20_08_2015.tsv";  //Change this line to point to your local telegram data file
+var sourceTSV ="dummy_data.tsv";  //Change this line to point to your local telegram data file
 var headers = ["name","date","message"].join("\t"); //This line holds the headers that will be added to the data
 
 var margin = {
