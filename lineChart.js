@@ -14,14 +14,8 @@ var messagesPerDay;
 function buildLineChart(svg, data)
 {	
 	var select  = d3.select("#lineChartDropDown").on("change", onChange);
-	console.log("building linechart in this svg: ");
-	console.log(svg);
-
 	var selectedIndex = d3.select("#lineChartDropDown").property('selectedIndex');
 	var name = d3.select("#lineChartDropDown").selectAll('option')[0][selectedIndex].text;
-	
-	// console.log("building linechart with this data");
-	// console.log(selectedData[28]);
 	
 	var margin = {top: 20, right: 20, bottom: 30, left: 50},
 	    width = 960 - margin.left - margin.right,
@@ -100,7 +94,7 @@ function buildLineChart(svg, data)
 
 
 function countMessagesPerDay(messageData){
-	//console.log(messageData[0]);
+	//console.table(messageData);
 	messageData.forEach(function(d) { d.date.setHours(0,0,0,0); });
 
 	messagesPerDay = d3.nest()
