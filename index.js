@@ -9,10 +9,10 @@
 */
 
 //(function(){ //disabled iffe for now to access vars from console .TODO: turn back on
-var sourceTSV = "dummy_data.tsv";  //Change this line to point to your local telegram data file
+//var sourceTSV = "dummy_data.tsv";  //Change this line to point to your local telegram data file
 //var sourceTSV = "telegram_data.tsv";  //Change this line to point to your local telegram data file
 
-//var sourceTSV = "metabol.tsv";  //Change this line to point to your local telegram data file
+var sourceTSV = "metabol.tsv";  //Change this line to point to your local telegram data file
 
 var headers = ["name","date","message"].join("\t"); //This line holds the headers that will be added to the data
 
@@ -22,7 +22,7 @@ var margin = {
   bottom: 130,
   left: 39
 };
-var width = 1200 - margin.left - margin.right;
+var width = 1800 - margin.left - margin.right;
 var height = 500 - margin.top - margin.bottom;
 
 var y = d3.scale.linear().range([height, 0]);
@@ -64,7 +64,7 @@ d3.text(sourceTSV, function(error, data) {
   valOptions.enter().append("option").text(function(d,i) { return d; });
   //TODO: combine two lines below
   var selectedIndex = barChartDropDown.property('selectedIndex');
-  var name = barChartDropDown.selectAll('option')[0][selectedIndex].text;
+  var option = barChartDropDown.selectAll('option')[0][selectedIndex].text;
 
   buildLineChart(lineChart, data);
 
@@ -74,25 +74,64 @@ d3.text(sourceTSV, function(error, data) {
 
   var barWidth = width / x.domain().length;
 
-  //We're creating a group per datum. By tranlating the group to the right position,
-  //Its children wont need their x values set individually.
-  var bar = barChart.selectAll("g")
-      .data(d3.values(data))
-    .enter().append("g")
-      .attr("transform", function(d, i) {
-        return "translate(" + i * barWidth + ",0)";
-      });
-      
-  bar.append("rect")
-    .attr("y", function(d) { return y(d[yVal]); })
-    .attr("width", barWidth)
-    .attr("height", 0)
-    .attr("fill", function(d) { return colorScale(d[colorVal]); })  //Todo this should divide the #messages by the delta month between first and last message
-    .transition()
-      .delay(function(d,i) { return 150 * i; })
-      .duration(300)
-      .ease("linear")
-      .attr("height", function(d) { return height - y(d[yVal]); });
+  var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left")
+    .ticks(10);
+
+  var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom");
+
+  barChart.append("g") //Create a group to hold just the bars
+    .attr("class", "bars");
+
+  barChart.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis)
+    .selectAll("text")
+      .attr("dx", barWidth/2)
+      .attr("dy", "2em")
+      .attr("transform", "rotate(45)");
+
+  barChart.append("g")
+    .attr("class", "y axis")
+    .call(yAxis);
+
+  update("questions");
+
+  function update(option)
+  {
+    yVal = option;  //This sets the new variable that the height of our barchart will listen to
+
+    console.log("update called with name: " + option);
+    y.domain([0, d3.max(d3.values(data), function(d) { return d[yVal]; } ) ]); //use d3.values to get an array of values from the object
+    colorScale.domain([0, d3.max(d3.values(data), function(d) { return d[colorVal]; } ) ]);  //This should be a calculation prob something like last message timestamp -first
+
+    d3.select(".chart .y.axis")
+        //.duration(750)
+        .call(yAxis);
+
+    //We're creating a group per datum. By tranlating the group to the right position,
+    //Its children wont need their x values set individually.
+    var bar = barChart.select(".bars").selectAll("g")
+        .data(d3.values(data))
+      .enter().append("g")
+        .attr("transform", function(d, i) {
+          return "translate(" + i * barWidth + ",0)";
+        });
+        
+    bar.append("rect")
+      .attr("y", function(d) { return y(d[yVal]); })
+      .attr("width", barWidth)
+      .attr("height", 0)
+      .attr("fill", function(d) { return colorScale(d[colorVal]); })  //Todo this should divide the #messages by the delta month between first and last message
+      .transition()
+        .delay(function(d,i) { return 150 * i; })
+        .duration(300)
+        .ease("linear")
+        .attr("height", function(d) { return height - y(d[yVal]); });
 
     bar.selectAll("rect")
     .append("svg:title")    //svg title adds a title element, which makes use of the browers native tooltip function
@@ -108,36 +147,15 @@ d3.text(sourceTSV, function(error, data) {
         return d[yVal];
       });
 
-    var yAxis = d3.svg.axis()
-      .scale(y)
-      .orient("left")
-      .ticks(10);
+    
+  }
 
-    var xAxis = d3.svg.axis()
-      .scale(x)
-      .orient("bottom");
-
-
-
-    barChart.append("g")
-      .attr("class", "x axis")
-      .attr("transform", "translate(0," + height + ")")
-      .call(xAxis)
-    .selectAll("text")
-      .attr("dx", barWidth/2)
-      .attr("dy", "2em")
-      .attr("transform", "rotate(45)");
-
-    barChart.append("g")
-      .attr("class", "y axis")
-      .call(yAxis);
-
-    function onChange(event) {
-      var selectedIndex = barChartDropDown.property('selectedIndex');
-      var option        = barChartDropDown.selectAll('option')[0][selectedIndex].text;
-      console.log(option);
-      //update(option);
-    };
+  function onChange(event) {
+    var selectedIndex = barChartDropDown.property('selectedIndex');
+    var option        = barChartDropDown.selectAll('option')[0][selectedIndex].text;
+    console.log(option);
+    update(option);
+  };
 });
 
 function groupMessages(messageData){
@@ -218,6 +236,24 @@ function groupMessages(messageData){
   }
   //console.table(groupedMessages);
   globalData = groupedMessages;
+  printStats();
   return groupedMessages;
+}
+
+function printStats()
+{
+  var total = 0;
+  for (var i in globalData)
+  {
+    total ++;
+    console.log(i);
+    console.log("messages: " + globalData[i].length);
+    console.log("averageActivity: " + globalData[i].averageActivity);
+    console.log("exclamations: " + globalData[i].exclamations);
+    console.log("questions: " + globalData[i].questions);
+    console.log("-----");
+    
+  }
+  console.log(total);
 }
 //}()); 
